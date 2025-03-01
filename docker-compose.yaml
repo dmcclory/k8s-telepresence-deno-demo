@@ -1,0 +1,9 @@
+services:
+  bookes:
+    build: backend_one/
+    ports: 
+      - "3003:3003"
+  movies:
+    build: backend_two/
+    ports: 
+      - "3004:3004"
