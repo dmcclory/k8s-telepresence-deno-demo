@@ -1,3 +1,5 @@
+# this is from:
+# https://docs.deno.com/runtime/reference/docker/
 FROM denoland/deno:latest
 
 WORKDIR /app
