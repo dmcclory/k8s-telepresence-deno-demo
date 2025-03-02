@@ -1,5 +1,5 @@
 services:
-  bookes:
+  books:
     build: backend_one/
     ports: 
       - "3003:3003"
@@ -7,3 +7,10 @@ services:
     build: backend_two/
     ports: 
       - "3004:3004"
+  middle_layer:
+    build: middle_layer/
+    ports:
+      - "3005:3005"
+    environment:
+      - MOVIES_HOST=http://movies:3004
+      - BOOKS_HOST=http://books:3003
