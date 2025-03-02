@@ -1,8 +1,28 @@
-export function add(a: number, b: number): number {
-  return a + b;
+// this combines some example code from:
+//
+// https://docs.deno.com/examples/environment_variables/
+// https://docs.deno.com/examples/http_server_routing/
+
+const PORT = Number(Deno.env.get("PORT") || "3005")
+
+const MOVIES_HOST = Deno.env.get("MOVIES_HOST") || "http://localhost:3004"
+const BOOKS_HOST = Deno.env.get("BOOKS_HOST") || "http://localhost:3003"
+
+async function handler(req: Request): Response {
+  const params = new URL(req.url).searchParams
+  const media_type = params.get('media_type')
+  const media_id = params.get('media_id')
+
+  if (!media_type || !['movies', 'books'].includes(media_type)) {
+    return new Response(JSON.stringify({status: `Must provide a media_type value - 'books' or 'movies'`}), {status: 400});
+  }
+  if (!media_id) {
+    return new Response(JSON.stringify({status: `Must provide a media_id value`}), {status: 400});
+  }
+
+  const host = media_type === 'books' ? BOOKS_HOST : MOVIES_HOST
+  const result = await fetch(`${host}/${media_type}/${media_id}`)
+  return result
 }
 
-// Learn more at https://docs.deno.com/runtime/manual/examples/module_metadata#concepts
-if (import.meta.main) {
-  console.log("Add 2 + 3 =", add(2, 3));
-}
+Deno.serve({ port: PORT}, handler);
