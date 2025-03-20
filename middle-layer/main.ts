@@ -13,6 +13,8 @@ async function handler(req: Request): Response {
   const media_type = params.get('media_type')
   const media_id = params.get('media_id')
 
+  console.log('hey!!! - a new request!');
+
   if (!media_type || !['movies', 'books'].includes(media_type)) {
     return new Response(JSON.stringify({status: `Must provide a media_type value - 'books' or 'movies'`}), {status: 400});
   }
@@ -22,7 +24,12 @@ async function handler(req: Request): Response {
 
   const host = media_type === 'books' ? BOOKS_HOST : MOVIES_HOST
   const result = await fetch(`${host}/${media_type}/${media_id}`)
-  return result
+  if (result.status >= 400) {
+    return result 
+  }
+  const data = await result.json()
+  return new Response(JSON.stringify({...data, extra: 'COOL', neat: 'oh yes'}, { status: result.status }));
+  //return result
 }
 
 Deno.serve({ port: PORT}, handler);
