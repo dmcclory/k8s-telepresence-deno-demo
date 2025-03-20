@@ -1,0 +1,185 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-one
+  labels:
+    app.kubernetes.io/name: backend-one
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend-one
+  template:
+    metadata:
+      labels:
+        app: backend-one
+    spec:
+      containers:
+      - name: backend-one
+        image: kube_services-books:latest
+        imagePullPolicy: Never
+        ports:
+          - containerPort: 3003
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-two
+  labels:
+    app.kubernetes.io/name: backend-two
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend-two
+  template:
+    metadata:
+      labels:
+        app: backend-two
+    spec:
+      containers:
+      - name: backend-two
+        image: kube_services-movies:latest
+        imagePullPolicy: Never
+        ports:
+          - containerPort: 3004
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: middle-layer
+  labels:
+    app.kubernetes.io/name: middle-layer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: middle-layer
+  template:
+    metadata:
+      labels:
+        app: middle-layer
+    spec:
+      containers:
+        - env:
+            - name: BOOKS_HOST
+              value: http://backend-one:3003
+            - name: MOVIES_HOST
+              value: http://backend-two:3004
+          name: middle-layer
+          image: middle-layer
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 3005
+              protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    app.kubernetes.io/name: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - env:
+            - name: MIDDLE_HOST
+              value: http://middle-layer:3005
+          name: frontend
+          image: frontend
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 3006
+              protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: backend-one
+  name: backend-one
+  namespace: default
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - port: 3003
+    protocol: TCP
+    targetPort: 3003
+  selector:
+    app: backend-one
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: backend-two
+  name: backend-two
+  namespace: default
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - port: 3004
+    protocol: TCP
+    targetPort: 3004
+  selector:
+    app: backend-two
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: middle-layer
+  name: middle-layer
+  namespace: default
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - port: 3005
+    protocol: TCP
+    targetPort: 3005
+  selector:
+    app: middle-layer
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: frontend
+  name: frontend
+  namespace: default
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - port: 3006
+    protocol: TCP
+    targetPort: 3006
+  selector:
+    app: frontend
+  sessionAffinity: None
+  type: ClusterIP
